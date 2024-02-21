@@ -57,4 +57,73 @@ variable "Routing_mode" {
   description = "Routing mode regional ?"
   default     = "REGIONAL"
 }
+# HTTP related variables
+variable "enabled_http" {
+  description = "Whether HTTP is enabled or not"
+}
+
+variable "protocol" {
+  description = "Protocol to be used"
+}
+
+variable "port_allowed" {
+  description = "Port to be used"
+}
+
+# SSH related variables
+variable "block_ssh" {
+  description = "Whether SSH access is blocked or not"
+}
+
+variable "disable_port" {
+  description = "Whether the port should be disabled or not"
+}
+
+# Networking related variables
+variable "source_ranges" {
+  description = "Source IP ranges for network rules"
+}
+
+variable "target_tags" {
+  description = "Target tags for network rules"
+}
+
+variable "tags" {
+  description = "Tags associated with the resources"
+}
+
+# VM related variables
+variable "webapp_VM_Name" {
+  description = "Name of the virtual machine"
+}
+
+variable "machinetype" {
+  description = "Type of machine"
+}
+
+variable "zone" {
+  description = "Zone where the VM will be deployed"
+}
+
+variable "image" {
+  description = "Image to be used for the VM"
+}
+
+variable "disksize" {
+  description = "Size of the disk for the VM"
+}
+
+variable "disktype" {
+  description = "Type of disk for the VM"
+}
+
+# Service account related variables
+variable "service_email" {
+  description = "Email address associated with the service account"
+}
+
+variable "scope" {
+  description = "Scope of the service account"
+}
+
 
