@@ -2,6 +2,7 @@ resource "google_compute_network" "amresh" {
   name                    = var.vpc_network_name
   auto_create_subnetworks = var.autocreate_subnet
   routing_mode            = var.Routing_mode
+  delete_default_routes_on_create = true
 }
 
 resource "google_compute_subnetwork" "webapp_subnet" {
