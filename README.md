@@ -14,5 +14,10 @@
 
 -  Added VM Instance
 
+- Enabled Service Networking API  
+- Service Usage API
+- Cloud Resource Manager API
+
+
 
 
