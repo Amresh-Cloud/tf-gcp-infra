@@ -57,7 +57,7 @@ resource "google_compute_instance" "webapp_vm" {
   machine_type = var.machinetype
   zone         = var.zone
   tags         = var.tags
-  depends_on   = [google_service_networking_connection.private_connection]
+  depends_on   = [google_sql_database_instance.db_instance]
 
   boot_disk {
     initialize_params {
