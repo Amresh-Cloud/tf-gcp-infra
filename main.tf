@@ -82,7 +82,7 @@ resource "google_compute_instance" "webapp_vm" {
     echo "DBHOST=${google_sql_database_instance.db_instance.first_ip_address}" > /opt/webapp/.env
     echo "DBUSER=webapp" >> /opt/webapp/.env
     echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
-    echo "DBNAME=webapp" >> /opt/webapp/.env
+    echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
 
   EOT
 

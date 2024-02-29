@@ -177,4 +177,7 @@ variable "database_pass_special"{
 }                  
 variable "database_pass_length"{
   description = "dbpass length"
-}                    
+}
+variable "DBNAME"{
+  description = "Database to passing to app"
+}                  
