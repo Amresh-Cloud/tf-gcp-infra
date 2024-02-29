@@ -125,5 +125,59 @@ variable "service_email" {
 variable "scope" {
   description = "Scope of the service account"
 }
+variable "global_address_name"  {
+  description = "global compute address name"
+}   
+variable "global_address_type"{
+  description = "global address type"
+}    
+variable "global_address_purpose"{
+  description = "global compute address purpose"
+} 
+variable "global_prefix_length"{
+  description = "global address prefix length"
+}   
+variable "web_dbname" {
+  description = "web app database instance name"
+}             
+variable "db_version"{
+  description = "database version"
+}        
+variable "db_tier"{
+  description = "databse tier"
+}         
+variable "db_availability"{
+  description = "database instance availability type"
+}   
+variable "db_disktype"{
+  description = "disk type"
+}         
+variable "db_disk_resize"{
+  description = "disk resize"
+}       
+variable "db_disk_size"{
+  description = "disk size"
+}               
+variable "db_backup_enable"{
+  description = "db backup"
+}                    
+variable "db_binary_log"{
+  description = "db binary"
+}                         
+variable "db_ipv4_enable"{
+  description = "ipv4 enable"
+}                        
+variable "database_name"{
+  description = "dbname"
+}                          
+variable "database_pass_special"{
+  description = "dbpass"
+}                  
+variable "database_pass_length"{
+  description = "dbpass length"
+}
+variable "DBNAME"{
+  description = "Database to passing to app"
+}  
 
 
