@@ -74,7 +74,7 @@ resource "google_compute_instance" "webapp_vm" {
     if [ ! -f "/opt/webapp/.env" ]; then
         touch /opt/webapp/.env
     fi
-    echo "DBHOST=${google_sql_database_instance.db_instance.first_ip_address}" > /opt/webapp/.env
+    echo "DBHOST=${google_sql_database_instance.db_instance.private_ip_address}" > /opt/webapp/.env
     echo "DBUSER=webapp" >> /opt/webapp/.env
     echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
     echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
