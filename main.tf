@@ -10,6 +10,7 @@ resource "google_compute_subnetwork" "webapp_subnet" {
   ip_cidr_range = var.webapp_subnet_cidr
   region        = var.region
   network       = google_compute_network.amresh.id
+  private_ip_google_access = true
 }
 
 resource "google_compute_subnetwork" "db_subnet" {
@@ -68,4 +69,77 @@ resource "google_compute_instance" "webapp_vm" {
     email  = var.service_email
     scopes = var.scope
   }
+ depends_on   = [google_sql_database_instance.db_instance]
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+    if [ ! -f "/opt/webapp/.env" ]; then
+        touch /opt/webapp/.env
+    fi
+    echo "DBHOST=${google_sql_database_instance.db_instance.first_ip_address}" > /opt/webapp/.env
+    echo "DBUSER=webapp" >> /opt/webapp/.env
+    echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
+    echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
+
+  EOT
+}
+resource "google_project_service" "service_networking" {
+  service = "servicenetworking.googleapis.com"
+}
+
+resource "google_compute_global_address" "default" {
+  project       = google_compute_network.amresh.project
+  name          = var.global_address_name
+  address_type  = var.global_address_type
+  purpose       = var.global_address_purpose
+  network       = google_compute_network.amresh.id
+  prefix_length = var.global_prefix_length
+}
+resource "google_service_networking_connection" "private_connection" {
+  network                 = google_compute_network.amresh.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.default.name]
+}
+resource "google_sql_database_instance" "db_instance" {
+  name             = var.web_dbname
+  database_version = var.db_version
+  region           = var.region
+  depends_on       = [google_service_networking_connection.private_connection]
+
+
+  settings {
+    tier              = var.db_tier
+    availability_type = var.db_availability
+    disk_type         = var.db_disktype
+    disk_autoresize   = var.db_disk_resize
+    disk_size         = var.db_disk_size
+    
+
+    backup_configuration {
+      enabled            = var.db_backup_enable
+      binary_log_enabled = var.db_binary_log
+    }
+
+    ip_configuration {
+      ipv4_enabled    = var.db_ipv4_enable
+      private_network = google_compute_network.amresh.self_link
+    }
+  }
+
+  deletion_protection = false
+}
+
+resource "google_sql_database" "webapp_db" {
+  name     = var.database_name
+  instance = google_sql_database_instance.db_instance.name
+}
+
+resource "random_password" "webapp_db_password" {
+  special = var.database_pass_special
+  length  = var.database_pass_length
+}
+
+resource "google_sql_user" "webapp_user" {
+  name     = var.database_name
+  instance = google_sql_database_instance.db_instance.name
+  password = random_password.webapp_db_password.result
 }
