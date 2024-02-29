@@ -10,7 +10,6 @@ resource "google_compute_subnetwork" "webapp_subnet" {
   ip_cidr_range = var.webapp_subnet_cidr
   region        = var.region
   network       = google_compute_network.amresh.id
-  private_ip_google_access = true
 }
 
 resource "google_compute_subnetwork" "db_subnet" {
