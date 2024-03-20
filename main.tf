@@ -28,7 +28,7 @@ resource "google_compute_route" "webapp_internet_route" {
 resource "google_compute_firewall" "blocking_ssh" {
   name = var.block_ssh
   network = google_compute_network.amresh.name
-  deny {
+  allow {
     protocol = var.protocol
     ports= var.disable_port
   }
@@ -65,10 +65,11 @@ resource "google_compute_instance" "webapp_vm" {
     }
   }
   service_account {
-    email  = var.service_email
+    email  = google_service_account.webapp_service_account.email
     scopes = var.scope
   }
- depends_on   = [google_sql_database_instance.db_instance]
+  
+ depends_on   = [google_sql_database_instance.db_instance, google_service_account.webapp_service_account]
   metadata_startup_script = <<-EOT
     #!/bin/bash
     if [ ! -f "/opt/webapp/.env" ]; then
@@ -80,6 +81,8 @@ resource "google_compute_instance" "webapp_vm" {
     echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
 
   EOT
+
+  
 }
 resource "google_project_service" "service_networking" {
   service = "servicenetworking.googleapis.com"
@@ -142,3 +145,36 @@ resource "google_sql_user" "webapp_user" {
   instance = google_sql_database_instance.db_instance.name
   password = random_password.webapp_db_password.result
 }
+resource "google_dns_record_set" "webapp_dns" {
+  name         = var.dns_name
+  type         = var.dns_type
+  ttl          = var.dns_ttl
+  managed_zone = var.dns_managed_zone
+  rrdatas      = [google_compute_instance.webapp_vm.network_interface.0.access_config.0.nat_ip]
+  depends_on = [google_compute_instance.webapp_vm]
+}
+
+resource "google_service_account" "webapp_service_account" {
+  account_id   = var.account_id
+  display_name = var.display_name
+  project      = var.project_id
+}
+
+resource "google_project_iam_binding" "log_admin" {
+  project = var.project_id
+  role    = var.log_role
+  members = [
+    "serviceAccount:${google_service_account.webapp_service_account.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "monitor_writer" {
+  project = var.project_id
+  role    = var.monitor_role
+  members = [
+    "serviceAccount:${google_service_account.webapp_service_account.email}",
+  ]
+}
+
+
+
