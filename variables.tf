@@ -176,8 +176,34 @@ variable "database_pass_special"{
 variable "database_pass_length"{
   description = "dbpass length"
 }
-variable "DBNAME"{
-  description = "Database to passing to app"
+variable "DBNAME" {
+  description = "DBNAME"
+}
+variable "dns_name"{
+  description = "Dns Name"
+} 
+variable "dns_type"{
+  description = "Dns type"
 }  
+variable "dns_managed_zone"{
+  description = "Dns Zone"
+} 
+variable "dns_ttl"{
+  description = "Dns ttl"
+} 
+variable "account_id"{
+  description = "Service Account Id"
+} 
+variable "display_name"{
+  description = "Service Account Display Name"
+} 
+variable "log_role"{
+  description = "Dns Name"
+} 
+variable "monitor_role" {
+  description = "Monitor Role"
+}
+
+
 
 
