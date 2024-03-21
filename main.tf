@@ -28,7 +28,7 @@ resource "google_compute_route" "webapp_internet_route" {
 resource "google_compute_firewall" "blocking_ssh" {
   name = var.block_ssh
   network = google_compute_network.amresh.name
-  allow {
+  deny {
     protocol = var.protocol
     ports= var.disable_port
   }
