@@ -236,15 +236,6 @@ resource "google_cloudfunctions2_function" "function" {
   build_config {
     entry_point = "sendemail"
     runtime     = "nodejs18"
-    environment_variables = {
-      MAILGUN_API_KEY = var.mailgun_api_key
-      DOMAIN_NAME     = var.domain_name
-      DBUSER          = "${var.DBNAME}"
-      DBNAME          = "${var.DBNAME}"
-      DBHOST          = "${google_sql_database_instance.db_instance.private_ip_address}"
-      DBPASSWORD      = "${random_password.webapp_db_password.result}"
-
-    }
     source {
       storage_source {
         bucket = google_storage_bucket.cloud_bucket.name
@@ -276,7 +267,7 @@ resource "google_cloudfunctions2_function" "function" {
     pubsub_topic = google_pubsub_topic.webapp_topic.id
     retry_policy = "RETRY_POLICY_RETRY"
   }
-  depends_on = [google_compute_instance.webapp_vm]
+  depends_on = [google_vpc_access_connector.webapp_connector]
 }
 
 
