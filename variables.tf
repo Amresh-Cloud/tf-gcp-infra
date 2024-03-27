@@ -203,7 +203,89 @@ variable "log_role"{
 variable "monitor_role" {
   description = "Monitor Role"
 }
-
-
+variable "pubsub_role" {
+  description = "Monitor Role"
+}
+variable "pubsub_topic_name" {
+  description = "Monitor Role"
+}
+variable "pubsub_subscription_name" {
+  description = "pubsub subscription name"
+}
+variable "serverless_connector_name" {
+  description = "serverless connector name"
+}
+variable "ack_seconds" {
+  description = "ack_deadline_seconds"
+}
+variable "message_duration" {
+  description = "message retention suration"
+}
+variable "sub_expire" {
+  description = "expiration policy ttl"
+}
+variable "bucket_name" {
+  description = "cloud bucket name"
+}
+variable "bucket_location" {
+  description = "location of bucket"
+}
+variable "bucket_object_name" {
+  description = "bucket oject name"
+}
+variable "bucket_source" {
+  description = "file path"
+}
+variable "pubsub_sub_bind" {
+  description = "google pubsub subscription iam binding"
+}
+variable "subscription_members" {
+  description = "members"
+}
+variable "connector_ipcidr" {
+  description = "Ip cidr for connector"
+}
+variable "min_no" {
+  description = "minimum number of instance"
+}
+variable "max_no" {
+  description = "maximum nuber of instance"
+}
+variable "variable_machinetype" {
+  description = "machine type for connector"
+}
+variable "cloud_function" {
+  description = "Cloud function name"
+}
+variable "cloud_function_description" {
+  description = "description"
+}
+variable "function_entry"{
+description = "function entry point"
+}
+variable "function_runtime" {
+  description = "function runtime"
+}
+variable "function_max_instance_count" {
+  description = "max no of instance count"
+}
+variable "function_memory" {
+  description = "function memory"
+}
+variable "function_timeout" {
+  description = "function time out"
+}
+variable "function_egress" {
+  description = "vpc_connector_egress_settings"
+}
+variable "function_retry_policy" {
+  description = "function retry policy"
+}
+variable "mailgun_api_key" {
+  description = "mailgun api key"
+}
+variable "domain_name" {
+  description = "domain_name"
+}
 
 
