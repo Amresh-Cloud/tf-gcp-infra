@@ -287,5 +287,121 @@ variable "mailgun_api_key" {
 variable "domain_name" {
   description = "domain_name"
 }
+variable "lb_forwarding_rule" {
+  description = "forearding rule for load balancing"
+}
+variable "forwarding_protocol" {
+  description = "forwarding rule protocol"
+}
+variable "lb_forwarding_schema" {
+  description = "loadbalancing schema"
+}
+variable "lb_forwarding_port" {
+  description = "forwarding "
+}
+variable "https_proxy_name" {
+  description = "https proxy name"
+}
+variable "domain_names" {
+  description = "domain name for ssl certificate"
+}
+variable "https_proxy_description" {
+  description = "https proxy descrption"
+}
+variable "ssl_certificate_name" {
+  description = "ssl certificate name"
+}
+variable "url_mapping_name" {
+  description = "url map id name name"
+}
+variable "lb_balanced_mode" {
+  description = "lb balanced mode"
+}
+variable "backend_named_port" {
+  description = "backend named port"
+}
+variable "backend_timeout" {
+  description = "backend timout"
+}
+variable "backend_session_affinity" {
+  description = "session_affinity"
+}
+variable "backend_protocol" {
+  description = "backend protocol "
+}
+variable "backend_name" {
+  description = "backend name"
+}
+variable "auto_scaler_name" {
+  description = "auto sclaer name"
+}
+variable "auto_scaler_max" {
+  description = "auto scaler max replicas"
+}
+variable "auto_scaler_min" {
+  description = "auto sclaer minimum repica"
+}
+variable "auto_scaler_cooldown" {
+  description = "autosclaer cooldown"
+}
+variable "autoscaler_cpu_utilization" {
+  description = "autoscaler cpu utilization"
+}
+variable "group_manager_basename" {
+  description = "group mabager vm base name"
+}
+variable "group_manager_primary_version" {
+  description = "group mabager vm base name"
+}
+variable "nameport_port" {
+  description = "named port "
+}
+variable "group_manager_name" {
+  description = "group mabager  name"
+}
+variable "health_firewall_name" {
+  description = "health check fire wall"
+}
+variable "health_fire_protocol" {
+  description = "health_fire_protocol"
+}
+variable "health_fire_ports" {
+  description = "health_fire_ports"
+}
+variable "health_fire_direction" {
+  description = "direction firewall"
+}
+variable "health_fire_priority" {
+  description = "health_fire_priority"
+}
+variable "health_fire_source_range" {
+  description = "health_fire_source_range"
+}
+variable "health_fire_target_tags" {
+  description = "health_fire_target_tags"
+}
+variable "template_machine_type" {
+  description = "instance template machine type"
+}
+variable "template_instance_type" {
+  description = "template_instance_type"
+}
+variable "template_instance_mode" {
+  description = "template_instance_mode"
+}
+variable "template_instance_devicename" {
+  description = "template_instance_devicename"
+}
+variable "template_instance_name" {
+  description = "template_instance_name"
+}
+variable "template_instance_auto_delete" {
+  description = "template_instance_auto_delete"
+}
+variable "template_instance_boot" {
+  description = "template_instance_boot"
+}
+
+
 
 

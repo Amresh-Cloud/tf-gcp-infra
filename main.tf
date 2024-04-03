@@ -10,6 +10,7 @@ resource "google_compute_subnetwork" "webapp_subnet" {
   ip_cidr_range = var.webapp_subnet_cidr
   region        = var.region
   network       = google_compute_network.amresh.id
+  private_ip_google_access = true
 }
 
 resource "google_compute_subnetwork" "db_subnet" {
@@ -17,6 +18,7 @@ resource "google_compute_subnetwork" "db_subnet" {
   ip_cidr_range = var.db_subnet_cidr
   region        = var.region
   network       = google_compute_network.amresh.id
+  private_ip_google_access = true
 }
 
 resource "google_compute_route" "webapp_internet_route" {
@@ -28,7 +30,7 @@ resource "google_compute_route" "webapp_internet_route" {
 resource "google_compute_firewall" "blocking_ssh" {
   name    = var.block_ssh
   network = google_compute_network.amresh.name
-  allow {
+  deny {
     protocol = var.protocol
     ports    = var.disable_port
   }
@@ -46,44 +48,44 @@ resource "google_compute_firewall" "enabled_http" {
   source_ranges = var.source_ranges
   target_tags   = var.target_tags
 }
-resource "google_compute_instance" "webapp_vm" {
-  name         = var.webapp_VM_Name
-  machine_type = var.machinetype
-  zone         = var.zone
-  tags         = var.tags
-  boot_disk {
-    initialize_params {
-      image = var.image
-      size  = var.disksize
-      type  = var.disktype
-    }
-  }
-  network_interface {
-    subnetwork = google_compute_subnetwork.webapp_subnet.self_link
-    access_config {
-      // Add access configuration if necessary
-    }
-  }
-  service_account {
-    email  = google_service_account.webapp_service_account.email
-    scopes = var.scope
-  }
+# resource "google_compute_instance" "webapp_vm" {
+#   name         = var.webapp_VM_Name
+#   machine_type = var.machinetype
+#   zone         = var.zone
+#   tags         = var.tags
+#   boot_disk {
+#     initialize_params {
+#       image = var.image
+#       size  = var.disksize
+#       type  = var.disktype
+#     }
+#   }
+#   network_interface {
+#     subnetwork = google_compute_subnetwork.webapp_subnet.self_link
+#     access_config {
+#       // Add access configuration if necessary
+#     }
+#   }
+#   service_account {
+#     email  = google_service_account.webapp_service_account.email
+#     scopes = var.scope
+#   }
 
-  depends_on              = [google_sql_database_instance.db_instance, google_service_account.webapp_service_account]
-  metadata_startup_script = <<-EOT
-    #!/bin/bash
-    if [ ! -f "/opt/webapp/.env" ]; then
-        touch /opt/webapp/.env
-    fi
-    echo "DBHOST=${google_sql_database_instance.db_instance.private_ip_address}" > /opt/webapp/.env
-    echo "DBUSER=webapp" >> /opt/webapp/.env
-    echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
-    echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
+#   depends_on              = [google_sql_database_instance.db_instance, google_service_account.webapp_service_account]
+#   metadata_startup_script = <<-EOT
+#     #!/bin/bash
+#     if [ ! -f "/opt/webapp/.env" ]; then
+#         touch /opt/webapp/.env
+#     fi
+#     echo "DBHOST=${google_sql_database_instance.db_instance.private_ip_address}" > /opt/webapp/.env
+#     echo "DBUSER=webapp" >> /opt/webapp/.env
+#     echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
+#     echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
 
-  EOT
+#   EOT
 
 
-}
+# }
 resource "google_project_service" "service_networking" {
   service = "servicenetworking.googleapis.com"
 }
@@ -150,8 +152,8 @@ resource "google_dns_record_set" "webapp_dns" {
   type         = var.dns_type
   ttl          = var.dns_ttl
   managed_zone = var.dns_managed_zone
-  rrdatas      = [google_compute_instance.webapp_vm.network_interface.0.access_config.0.nat_ip]
-  depends_on   = [google_compute_instance.webapp_vm]
+  rrdatas      = [google_compute_global_forwarding_rule.https_forwarding_rule.ip_address]
+  depends_on   = [google_compute_global_forwarding_rule.https_forwarding_rule]
 }
 
 resource "google_service_account" "webapp_service_account" {
@@ -275,7 +277,7 @@ resource "google_compute_firewall" "firewall_health_check" {
   name = "fw-allow-health-check"
   allow {
     protocol = "tcp"
-    ports=["2500"]
+    ports    = ["2500"]
   }
   direction     = "INGRESS"
   network       = google_compute_network.amresh.self_link
@@ -284,18 +286,17 @@ resource "google_compute_firewall" "firewall_health_check" {
   target_tags   = ["load-balanced-backend"]
 }
 
-resource "google_compute_region_health_check" "vm_health_check" {
-  name               = "my-health-check"
-  check_interval_sec = 30
-  timeout_sec        = 10
-  healthy_threshold  = 2
-  unhealthy_threshold= 2
-  region = var.region
-  project = var.project_id
+resource "google_compute_health_check" "vm_health_check" {
+  name                = "my-health-check"
+  check_interval_sec  = 30
+  timeout_sec         = 10
+  healthy_threshold   = 2
+  unhealthy_threshold = 2
+  project             = var.project_id
 
   http_health_check {
-    port = "2500"
-    request_path = "/healthz"
+    port               = "2500"
+    request_path       = "/healthz"
     port_specification = "USE_FIXED_PORT"
     proxy_header       = "NONE"
 
@@ -310,7 +311,7 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
     device_name  = "persistent-disk-0"
     mode         = "READ_WRITE"
     source_image = var.image
-    disk_size_gb=var.disksize
+    disk_size_gb = var.disksize
     type         = "PERSISTENT"
   }
 
@@ -329,9 +330,7 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
   EOT
   }
   network_interface {
-    access_config {
-      network_tier = "PREMIUM"
-    }
+
     network    = google_compute_network.amresh.id
     subnetwork = google_compute_subnetwork.webapp_subnet.id
   }
@@ -341,11 +340,11 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
     email  = google_service_account.webapp_service_account.email
     scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
   }
-  tags = ["load-balanced-backend","allow-health-check","http-server"]
+  tags = ["load-balanced-backend", "allow-health-check", "http-server"]
 }
 
 resource "google_compute_region_instance_group_manager" "my_instance_group_manager" {
-  name = "l7-xlb-backend-example"
+  name   = "l7-xlb-backend-example"
   region = var.region
   named_port {
     name = "http"
@@ -353,30 +352,151 @@ resource "google_compute_region_instance_group_manager" "my_instance_group_manag
   }
   version {
     instance_template = google_compute_region_instance_template.webapp_instance_template.id
-    name              = "primary"
+    name              = var.group_manager_primary_version
   }
-  base_instance_name = "vm"
+  base_instance_name = var.group_manager_basename
 
   auto_healing_policies {
-    health_check      = google_compute_region_health_check.vm_health_check.id
+    health_check      = google_compute_health_check.vm_health_check.id
     initial_delay_sec = 300
   }
 }
 resource "google_compute_region_autoscaler" "autoscaler-webapp" {
-  name   = "my-region-autoscaler"
+  name   = var.auto_scaler_name
   region = var.region
   target = google_compute_region_instance_group_manager.my_instance_group_manager.id
 
   autoscaling_policy {
-    max_replicas    = 2
-    min_replicas    = 1
-    cooldown_period = 60
+    max_replicas    = var.auto_scaler_max
+    min_replicas    = var.auto_scaler_min
+    cooldown_period = var.auto_scaler_cooldown
 
     cpu_utilization {
-      target = 0.05
+      target = var.autoscaler_cpu_utilization
     }
   }
 }
+# resource "google_compute_subnetwork" "load_balancer_sn" {
+#   name                       = "backend-subnet"
+#   ip_cidr_range              = "10.1.2.0/24"
+#   network                    = google_compute_network.amresh.id
+#   private_ipv6_google_access = "DISABLE_GOOGLE_ACCESS"
+#   purpose                    = "PRIVATE"
+#   region                     = var.region
+#   stack_type                 = "IPV4_ONLY"
+# }
+# resource "google_compute_subnetwork" "proxy_only" {
+#   name          = "proxy-only-subnet"
+#   ip_cidr_range = "10.129.0.0/23"
+#   network       = google_compute_network.amresh.id
+#   purpose       = "REGIONAL_MANAGED_PROXY"
+#   region        = var.region
+#   role          = "ACTIVE"
+# }
+
+# resource "google_compute_firewall" "allow_proxy" {
+#   name = "fw-allow-proxies"
+#   allow {
+#     ports    = ["443"]
+#     protocol = "tcp"
+#   }
+#   allow {
+#     ports    = ["80"]
+#     protocol = "tcp"
+#   }
+#   allow {
+#     ports    = ["2500"]
+#     protocol = "tcp"
+#   }
+#   direction     = "INGRESS"
+#   network       = google_compute_network.amresh.id
+#   priority      = 1000
+#   source_ranges = ["10.129.0.0/23"]
+#   target_tags   = ["load-balanced-backend"]
+# }
+
+
+# resource "google_compute_address" "default" {
+#   name         = "gobal_address"
+#   address_type = "EXTERNAL"
+#   network_tier = "STANDARD"
+# }
+
+resource "google_compute_backend_service" "backend_service_lb" {
+  name                  = var.backend_name
+  load_balancing_scheme = var.lb_forwarding_schema
+  health_checks         = [google_compute_health_check.vm_health_check.id]
+  protocol              = var.backend_protocol
+  session_affinity      = var.backend_session_affinity
+  timeout_sec           = var.backend_timeout
+  port_name             = var.backend_named_port
+  backend {
+    group           = google_compute_region_instance_group_manager.my_instance_group_manager.instance_group
+    balancing_mode  = var.lb_balanced_mode
+    capacity_scaler = 1.0
+  }
+}
+
+resource "google_compute_url_map" "url_map_ld" {
+  name            = var.url_mapping_name
+  default_service = google_compute_backend_service.backend_service_lb.id
+}
+
+# resource "google_compute_region_target_http_proxy" "default" {
+#   name    = "l7-xlb-proxy"
+#   region  = var.region
+#   url_map = google_compute_region_url_map.url_map_ld.id
+# }
+resource "google_compute_managed_ssl_certificate" "lb_default" {
+  name    = var.ssl_certificate_name
+  project = var.project_id
+
+  managed {
+    domains = var.domain_names
+  }
+}
+
+# resource "google_compute_ssl_policy" "ssl_policy" {
+#   name                = "my-ssl-policy"
+#   profile             = "MODERN"
+#   min_tls_version     = "TLS_1_2"
+#   custom_features     = ["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"]
+#   managed_certificate = google_managed_ssl_certificate.lb_default.name
+# }
+resource "google_compute_target_https_proxy" "https_proxy" {
+  name        = var.https_proxy_name
+  description = var.https_proxy_description
+  url_map     = google_compute_url_map.url_map_ld.id
+  ssl_certificates = [
+    google_compute_managed_ssl_certificate.lb_default.self_link
+  ]
+
+}
+resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
+  name                  = var.lb_forwarding_rule
+  target                = google_compute_target_https_proxy.https_proxy.id
+  ip_protocol           = var.forwarding_protocol
+  load_balancing_scheme = var.lb_forwarding_schema
+  port_range            = var.lb_forwarding_port
+}
+
+# resource "google_compute_forwarding_rule" "default" {
+#   name       = "l7-xlb-forwarding-rule"
+#   provider   = google-beta
+#   depends_on = [google_compute_subnetwork.proxy_only]
+#   region     = var.region
+
+#   ip_protocol           = "TCP"
+#   load_balancing_scheme = "EXTERNAL_MANAGED"
+#   port_range            = "80"
+#   target                = google_compute_region_target_http_proxy.default.id
+#   network               = google_compute_network.default.id
+#   ip_address            = google_compute_address.default.id
+#   network_tier          = "STANDARD"
+# }
+
+
+
 
 
 
