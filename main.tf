@@ -28,7 +28,7 @@ resource "google_compute_route" "webapp_internet_route" {
 resource "google_compute_firewall" "blocking_ssh" {
   name    = var.block_ssh
   network = google_compute_network.amresh.name
-  deny {
+  allow {
     protocol = var.protocol
     ports    = var.disable_port
   }
@@ -268,6 +268,114 @@ resource "google_cloudfunctions2_function" "function" {
     retry_policy = "RETRY_POLICY_RETRY"
   }
   depends_on = [google_vpc_access_connector.webapp_connector]
+}
+
+
+resource "google_compute_firewall" "firewall_health_check" {
+  name = "fw-allow-health-check"
+  allow {
+    protocol = "tcp"
+    ports=["2500"]
+  }
+  direction     = "INGRESS"
+  network       = google_compute_network.amresh.self_link
+  priority      = 1000
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["load-balanced-backend"]
+}
+
+resource "google_compute_region_health_check" "vm_health_check" {
+  name               = "my-health-check"
+  check_interval_sec = 30
+  timeout_sec        = 10
+  healthy_threshold  = 2
+  unhealthy_threshold= 2
+  region = var.region
+  project = var.project_id
+
+  http_health_check {
+    port = "2500"
+    request_path = "/healthz"
+    port_specification = "USE_FIXED_PORT"
+    proxy_header       = "NONE"
+
+  }
+
+}
+resource "google_compute_region_instance_template" "webapp_instance_template" {
+  name = "l7-xlb-backend-template"
+  disk {
+    auto_delete  = true
+    boot         = true
+    device_name  = "persistent-disk-0"
+    mode         = "READ_WRITE"
+    source_image = var.image
+    disk_size_gb=var.disksize
+    type         = "PERSISTENT"
+  }
+
+  machine_type = "n1-standard-1"
+  metadata = {
+    startup-script = <<-EOT
+    #!/bin/bash
+    if [ ! -f "/opt/webapp/.env" ]; then
+        touch /opt/webapp/.env
+    fi
+    echo "DBHOST=${google_sql_database_instance.db_instance.private_ip_address}" > /opt/webapp/.env
+    echo "DBUSER=webapp" >> /opt/webapp/.env
+    echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
+    echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
+
+  EOT
+  }
+  network_interface {
+    access_config {
+      network_tier = "PREMIUM"
+    }
+    network    = google_compute_network.amresh.id
+    subnetwork = google_compute_subnetwork.webapp_subnet.id
+  }
+  region = var.region
+
+  service_account {
+    email  = google_service_account.webapp_service_account.email
+    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
+  }
+  tags = ["load-balanced-backend","allow-health-check","http-server"]
+}
+
+resource "google_compute_region_instance_group_manager" "my_instance_group_manager" {
+  name = "l7-xlb-backend-example"
+  region = var.region
+  named_port {
+    name = "http"
+    port = 2500
+  }
+  version {
+    instance_template = google_compute_region_instance_template.webapp_instance_template.id
+    name              = "primary"
+  }
+  base_instance_name = "vm"
+
+  auto_healing_policies {
+    health_check      = google_compute_region_health_check.vm_health_check.id
+    initial_delay_sec = 300
+  }
+}
+resource "google_compute_region_autoscaler" "autoscaler-webapp" {
+  name   = "my-region-autoscaler"
+  region = var.region
+  target = google_compute_region_instance_group_manager.my_instance_group_manager.id
+
+  autoscaling_policy {
+    max_replicas    = 2
+    min_replicas    = 1
+    cooldown_period = 60
+
+    cpu_utilization {
+      target = 0.05
+    }
+  }
 }
 
 
