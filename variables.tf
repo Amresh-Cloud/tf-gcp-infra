@@ -487,3 +487,9 @@ variable "gorup_manager_named_port_port" {
 variable "webapp_instance_tags" {
   description = "webapp_instance_tags"
 }
+variable "lb_logs" {
+  description = "logs for load balancer"
+}
+variable "lb_log_rate" {
+  description = "logs rate for load balancer"
+}

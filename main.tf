@@ -427,6 +427,10 @@ resource "google_compute_backend_service" "backend_service_lb" {
     balancing_mode  = var.lb_balanced_mode
     capacity_scaler = 1.0
   }
+  log_config {
+    enable = var.lb_logs
+    sample_rate = var.lb_log_rate
+  }
 }
 
 resource "google_compute_url_map" "url_map_ld" {
