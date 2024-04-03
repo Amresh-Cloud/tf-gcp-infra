@@ -401,7 +401,89 @@ variable "template_instance_auto_delete" {
 variable "template_instance_boot" {
   description = "template_instance_boot"
 }
+variable "cloud_function_name" {
+  description = "cloud_function_name"
+}
+variable "cloud_function_decription" {
+  description = "cloud_function_decription"
+}
+variable "cloud_function_entrypoint" {
+  description = "cloud_function_entrypoint"
+}
+variable "cloud_function_runtinme" {
+  description = "cloud_function_runtinme"
+}
+variable "cloud_function_available_memory" {
+  description = "cloud_function_available_memory"
+}
+variable "cloud_function_timeout" {
+  description = "cloud_function_timeout"
+}
+variable "cloud_function_vpc_engress" {
+  description = "cloud_function_vpc_engress"
+}
+variable "cloud_function_event_retrypolicy" {
+  description = "cloud_function_event_retrypolicy"
+}
+variable "cloud_function_instance_count" {
+  description = "cloud_function_instance_count"
+}
+variable "health_checker_name" {
+  description = "name for health_checker"
+}
+variable "health_checker_time_check_interval" {
+  description = "health_checker_time_check_interval"
+}
 
+variable "health_checker_time_out" {
+  description = "health_checker_time_out"
+}
+variable "health_checker_healthy_vm_threshold" {
+  description = "health_checker_healthy_vm_threshold"
+}
+variable "health_checker_unhealthy_vm_threshold" {
+  description = "health_checker_unhealthy_vm_threshold"
+}
+variable "health_checker_http_endpoint_port" {
+  description = "health_checker_http_endpoint_port"
+}
+variable "health_checker_http_endpoint_path" {
+  description = "health_checker_http_endpoint_path"
+}
+variable "health_checker_http_endpoint_port_speci" {
+  description = "health_checker_http_endpoint_port_speci"
+}
+variable "health_checker_http_endpoint_proxy_h"{
+description = "health_checker_http_endpoint_proxy_h"
+}
+variable "insatnce_template_webapp" {
+  description = "insatnce_template_webapp"
+}
+variable "insatnce_template_disk_autodelete" {
+  description = "insatnce_template_disk_autodelete"
+}
+variable "instance_template_disk_boot" {
+  description = "instance_template_disk_boot"
+}
+variable "instance_template_disk_device" {
+  description = "instance_template_disk_device"
+}
+variable "instance_template_disk_mode" {
+  description = "instance_template_disk_mode"
+}
+variable "instance_template_disk_type" {
+  description = "instance_template_disk_type"
+}
+variable "instance_template_machine_type" {
+  description = "machine type for template"
+}
 
-
-
+variable "gorup_manager_named_port_name" {
+  description = "gorup_manager_named_port_name"
+}
+variable "gorup_manager_named_port_port" {
+  description = "gorup_manager_named_port_port"
+}
+variable "webapp_instance_tags" {
+  description = "webapp_instance_tags"
+}
