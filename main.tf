@@ -230,14 +230,14 @@ resource "google_vpc_access_connector" "webapp_connector" {
   depends_on = [google_project_service.serverless_vpc_access]
 }
 resource "google_cloudfunctions2_function" "function" {
-  name        = "my-cloud-function"
-  description = "My Cloud Function"
+  name        = var.cloud_function_name
+  description = var.cloud_function_decription
   location    = var.region
 
 
   build_config {
-    entry_point = "sendemail"
-    runtime     = "nodejs18"
+    entry_point = var.cloud_function_entrypoint
+    runtime     = var.cloud_function_runtinme
     source {
       storage_source {
         bucket = google_storage_bucket.cloud_bucket.name
@@ -247,11 +247,11 @@ resource "google_cloudfunctions2_function" "function" {
     }
   }
   service_config {
-    max_instance_count            = 1
-    available_memory              = "256M"
-    timeout_seconds               = "60"
+    max_instance_count            = var.cloud_function_instance_count
+    available_memory              = var.cloud_function_available_memory
+    timeout_seconds               = var.cloud_function_timeout
     vpc_connector                 = google_vpc_access_connector.webapp_connector.name
-    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
+    vpc_connector_egress_settings = var.cloud_function_vpc_engress
     environment_variables = {
       MAILGUN_API_KEY = var.mailgun_api_key
       DOMAIN_NAME     = var.domain_name
@@ -267,55 +267,55 @@ resource "google_cloudfunctions2_function" "function" {
 
     event_type   = "google.cloud.pubsub.topic.v1.messagePublished"
     pubsub_topic = google_pubsub_topic.webapp_topic.id
-    retry_policy = "RETRY_POLICY_RETRY"
+    retry_policy = var.cloud_function_event_retrypolicy
   }
   depends_on = [google_vpc_access_connector.webapp_connector]
 }
 
 
 resource "google_compute_firewall" "firewall_health_check" {
-  name = "fw-allow-health-check"
+  name = var.health_firewall_name
   allow {
-    protocol = "tcp"
-    ports    = ["2500"]
+    protocol = var.health_fire_protocol
+    ports    = var.health_fire_ports
   }
-  direction     = "INGRESS"
+  direction     = var.health_fire_direction
   network       = google_compute_network.amresh.self_link
-  priority      = 1000
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
-  target_tags   = ["load-balanced-backend"]
+  priority      = var.health_fire_priority
+  source_ranges = var.health_fire_source_range
+  target_tags   = var.health_fire_target_tags
 }
 
 resource "google_compute_health_check" "vm_health_check" {
-  name                = "my-health-check"
-  check_interval_sec  = 30
-  timeout_sec         = 10
-  healthy_threshold   = 2
-  unhealthy_threshold = 2
+  name                = var.health_checker_name
+  check_interval_sec  = var.health_checker_time_check_interval
+  timeout_sec         = var.health_checker_time_out
+  healthy_threshold   = var.health_checker_healthy_vm_threshold
+  unhealthy_threshold = var.health_checker_unhealthy_vm_threshold
   project             = var.project_id
 
   http_health_check {
-    port               = "2500"
-    request_path       = "/healthz"
-    port_specification = "USE_FIXED_PORT"
-    proxy_header       = "NONE"
+    port               = var.health_checker_http_endpoint_port
+    request_path       = var.health_checker_http_endpoint_path
+    port_specification = var.health_checker_http_endpoint_port_speci
+    proxy_header       = var.health_checker_http_endpoint_proxy_h
 
   }
 
 }
 resource "google_compute_region_instance_template" "webapp_instance_template" {
-  name = "l7-xlb-backend-template"
+  name = var.insatnce_template_webapp
   disk {
-    auto_delete  = true
-    boot         = true
-    device_name  = "persistent-disk-0"
-    mode         = "READ_WRITE"
+    auto_delete  = var.insatnce_template_disk_autodelete
+    boot         = var.instance_template_disk_boot
+    device_name  = var.instance_template_disk_device
+    mode         = var.instance_template_disk_mode
     source_image = var.image
     disk_size_gb = var.disksize
-    type         = "PERSISTENT"
+    type         = var.instance_template_disk_type
   }
 
-  machine_type = "n1-standard-1"
+  machine_type = var.instance_template_machine_type
   metadata = {
     startup-script = <<-EOT
     #!/bin/bash
@@ -323,7 +323,7 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
         touch /opt/webapp/.env
     fi
     echo "DBHOST=${google_sql_database_instance.db_instance.private_ip_address}" > /opt/webapp/.env
-    echo "DBUSER=webapp" >> /opt/webapp/.env
+    echo "DBUSER=${var.DBNAME}" >> /opt/webapp/.env
     echo "DBPASSWORD=${random_password.webapp_db_password.result}" >> /opt/webapp/.env
     echo "DBNAME=${var.DBNAME}" >> /opt/webapp/.env
 
@@ -340,15 +340,15 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
     email  = google_service_account.webapp_service_account.email
     scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
   }
-  tags = ["load-balanced-backend", "allow-health-check", "http-server"]
+  tags = var.webapp_instance_tags
 }
 
 resource "google_compute_region_instance_group_manager" "my_instance_group_manager" {
-  name   = "l7-xlb-backend-example"
+  name   = var.group_manager_name
   region = var.region
   named_port {
-    name = "http"
-    port = 2500
+    name = var.gorup_manager_named_port_name
+    port = var.gorup_manager_named_port_port
   }
   version {
     instance_template = google_compute_region_instance_template.webapp_instance_template.id
@@ -396,14 +396,7 @@ resource "google_compute_region_autoscaler" "autoscaler-webapp" {
 
 # resource "google_compute_firewall" "allow_proxy" {
 #   name = "fw-allow-proxies"
-#   allow {
-#     ports    = ["443"]
-#     protocol = "tcp"
-#   }
-#   allow {
-#     ports    = ["80"]
-#     protocol = "tcp"
-#   }
+#
 #   allow {
 #     ports    = ["2500"]
 #     protocol = "tcp"
@@ -411,8 +404,7 @@ resource "google_compute_region_autoscaler" "autoscaler-webapp" {
 #   direction     = "INGRESS"
 #   network       = google_compute_network.amresh.id
 #   priority      = 1000
-#   source_ranges = ["10.129.0.0/23"]
-#   target_tags   = ["load-balanced-backend"]
+
 # }
 
 
