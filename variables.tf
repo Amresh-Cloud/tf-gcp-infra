@@ -493,3 +493,36 @@ variable "lb_logs" {
 variable "lb_log_rate" {
   description = "logs rate for load balancer"
 }
+variable "keychain_sql_serviceAccount" {
+  description = "keychain service account"
+}
+variable "keychain_sql_serviceAccount_des" {
+  description = "keychain service account"
+}
+variable "keychain_sql_serviceAccount_role" {
+  description = "keychain_sql_serviceAccount role"
+}
+variable "csye_key_ring_name" {
+  description = "Key ring name "
+}
+variable "vm_key_name" {
+  description = "vm key name"
+}
+variable "storage_key_name" {
+  description = "strogae key name"
+}
+variable "sql_instance_key_name" {
+  description = "sql strogae key name"
+}
+variable "key_rotation" {
+  description = "key rotation days"
+}
+variable "key_purpose" {
+  description = "key purpose "
+}
+variable "stroage_member_email" {
+  description = "service account used in storage key crypto binding "
+}
+variable "vm_member_email" {
+  description = "service account used in VM key crypto binding"
+}

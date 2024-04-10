@@ -3,6 +3,7 @@ resource "google_compute_network" "amresh" {
   auto_create_subnetworks         = var.autocreate_subnet
   routing_mode                    = var.Routing_mode
   delete_default_routes_on_create = true
+  project = var.project_id
 }
 
 resource "google_compute_subnetwork" "webapp_subnet" {
@@ -107,7 +108,8 @@ resource "google_sql_database_instance" "db_instance" {
   name             = var.web_dbname
   database_version = var.db_version
   region           = var.region
-  depends_on       = [google_service_networking_connection.private_connection]
+  depends_on       = [google_service_networking_connection.private_connection,google_kms_crypto_key.sql_instance_key]
+  encryption_key_name = google_kms_crypto_key.sql_instance_key.id
 
 
   settings {
@@ -117,6 +119,7 @@ resource "google_sql_database_instance" "db_instance" {
     disk_autoresize   = var.db_disk_resize
     disk_size         = var.db_disk_size
 
+   
 
     backup_configuration {
       enabled            = var.db_backup_enable
@@ -201,12 +204,18 @@ resource "google_pubsub_subscription" "webapp_subscription" {
 }
 resource "google_storage_bucket" "cloud_bucket" {
   name     = var.bucket_name
-  location = var.bucket_location
+  location = var.region
+   encryption {
+    default_kms_key_name = google_kms_crypto_key.storage_crypto_key.id
+  }
+  depends_on = [ google_kms_crypto_key.storage_crypto_key, google_kms_crypto_key_iam_binding.storage_crypto_key_binding ]
 }
 resource "google_storage_bucket_object" "archive" {
   name   = var.bucket_object_name
   bucket = google_storage_bucket.cloud_bucket.name
   source = var.bucket_source
+  
+
 }
 resource "google_pubsub_subscription_iam_binding" "webapp_subscription_binding" {
   project      = var.project_id
@@ -313,7 +322,13 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
     source_image = var.image
     disk_size_gb = var.disksize
     type         = var.instance_template_disk_type
+    disk_encryption_key{
+      kms_key_self_link = google_kms_crypto_key.vm_crypto_key.id
+
+    }
+    
   }
+ 
 
   machine_type = var.instance_template_machine_type
   metadata = {
@@ -337,8 +352,9 @@ resource "google_compute_region_instance_template" "webapp_instance_template" {
   region = var.region
 
   service_account {
+    
     email  = google_service_account.webapp_service_account.email
-    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/pubsub", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
+    scopes = var.scope
   }
   tags = var.webapp_instance_tags
 }
@@ -452,13 +468,7 @@ resource "google_compute_managed_ssl_certificate" "lb_default" {
   }
 }
 
-# resource "google_compute_ssl_policy" "ssl_policy" {
-#   name                = "my-ssl-policy"
-#   profile             = "MODERN"
-#   min_tls_version     = "TLS_1_2"
-#   custom_features     = ["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"]
-#   managed_certificate = google_managed_ssl_certificate.lb_default.name
-# }
+
 resource "google_compute_target_https_proxy" "https_proxy" {
   name        = var.https_proxy_name
   description = var.https_proxy_description
@@ -490,7 +500,96 @@ resource "google_compute_global_forwarding_rule" "https_forwarding_rule" {
 #   ip_address            = google_compute_address.default.id
 #   network_tier          = "STANDARD"
 # }
+resource "google_kms_key_ring" "my_key_ring" {
+  name     = "${random_string.random_string_vmkey.result}"
+  project = var.project_id
+  location = var.region
+}
 
+resource "random_string" "random_string_vmkey" {
+  length  = 5
+  special = false
+}
+resource "google_kms_crypto_key" "vm_crypto_key" {
+  name = "instance-key${random_string.random_string_vmkey.result}"
+  key_ring        = google_kms_key_ring.my_key_ring.id
+  rotation_period = var.key_rotation
+ 
+  purpose  = var.key_purpose
+   lifecycle {
+    prevent_destroy = false
+  }
+
+}
+
+
+resource "google_kms_crypto_key" "storage_crypto_key" {
+  name            = var.storage_key_name
+  key_ring        = google_kms_key_ring.my_key_ring.id
+  rotation_period = var.key_rotation
+  purpose  = var.key_purpose
+   lifecycle {
+    prevent_destroy = false
+  }
+
+}
+resource "google_kms_crypto_key" "sql_instance_key" {
+  name     = var.sql_instance_key_name
+  key_ring = google_kms_key_ring.my_key_ring.id
+  purpose  = var.key_purpose
+  rotation_period = var.key_rotation
+   lifecycle {
+    prevent_destroy = false
+  }
+
+}
+# data "google_project" "current" {
+# }
+# locals {
+#     cloud_storage_service_account = "service-devv-414701@gs-project-accounts.iam.gserviceaccount.com"
+# }
+
+
+# resource "google_service_account" "keychain_service_account" {
+#   account_id   = var.keychain_sql_serviceAccount
+#   display_name = var.keychain_sql_serviceAccount_des
+#   project      = var.project_id
+# }
+resource "google_project_service_identity" "gcp_sa_cloud_sql" {
+  provider = google-beta
+  project = var.project_id
+  service  = "sqladmin.googleapis.com"
+}
+resource "google_kms_crypto_key_iam_binding" "sql_crypto_key_binding" {
+
+  crypto_key_id = google_kms_crypto_key.sql_instance_key.id
+   role    = var.keychain_sql_serviceAccount_role
+
+  members = [
+     "serviceAccount:${google_project_service_identity.gcp_sa_cloud_sql.email}",
+  ]
+  depends_on = [ google_kms_crypto_key.sql_instance_key ]
+}
+resource "google_kms_crypto_key_iam_binding" "vm_crypto_key_binding" {
+  
+  crypto_key_id = google_kms_crypto_key.vm_crypto_key.id
+   role    = var.keychain_sql_serviceAccount_role
+
+  members = [
+     var.vm_member_email
+  ]
+  depends_on = [ google_kms_crypto_key.vm_crypto_key ]
+}
+resource "google_kms_crypto_key_iam_binding" "storage_crypto_key_binding" {
+ 
+  crypto_key_id = google_kms_crypto_key.storage_crypto_key.id
+   role    = var.keychain_sql_serviceAccount_role
+
+  members = [
+     var.stroage_member_email
+  ]
+  depends_on = [ google_kms_crypto_key.storage_crypto_key ]
+}
 
 
 
