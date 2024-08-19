@@ -1,31 +1,51 @@
-# tf-gcp-infra
+# Google Cloud Platform Infrastructure with Terraform
 
-- API Enabled
+## Overview
 
-- Compute Engine API
+This repository contains Terraform configuration files for setting up an infrastructure on Google Cloud Platform (GCP). The setup includes:
 
-- Added Yml
+- Virtual Private Cloud (VPC) and subnets
+- Firewall rules
+- Compute instances and instance groups
+- Cloud SQL database
+- Pub/Sub topics and subscriptions
+- Storage buckets
+- Cloud Functions
+- SSL Certificates and Load Balancer
 
-- Added Firewals
+## Prerequisites
 
-- Added SSH Blocking,
+- [Terraform](https://www.terraform.io/downloads) (version 1.x or later)
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+- A Google Cloud Platform account and project
 
--  Enabled HTTP
+## Configuration
 
--  Added VM Instance
+Before applying the Terraform configurations, set up your variables in a `terraform.tfvars` file. Below is an example structure for `terraform.tfvars`:
 
+## Clone the Repository
 
-## Load Balancing
+- git clone https://github.com/yourusername/your-repo.git
+- cd your-repo
 
-- External Application Load Balancer is configured to support HTTPS protocol.
-- SSL certificates are set up using Google-managed SSL certificates.
-- APIs are accessible via HTTPS protocol on port 443.
+## Initialize Terraform
 
-## Autoscaling
+- terraform init
 
-- Regional compute instance template matching the current VM deployment is created.
-- Compute health check is configured to use the `/healthz` endpoint in the web application.
-- Compute autoscaler resource is set up to scale up when CPU usage exceeds 5%.
-- Regional compute instance group manager is created incorporating the above resources.
+## Review the Plan
 
+- terraform plan
+
+## Apply the Configuration
+
+- terraform apply
+
+## Destroy the Infrastructure
+
+- terraform destroy
+  
+# Resources
+ - Terraform Documentation
+ - Google Cloud Platform Documentation
+ - Terraform Google Cloud Provider Documentation
 
