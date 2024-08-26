@@ -1,51 +1,131 @@
-# Google Cloud Platform Infrastructure with Terraform
 
-## Overview
+# Setting Up Google Cloud Platform Infrastructure with Terraform
 
-This repository contains Terraform configuration files for setting up an infrastructure on Google Cloud Platform (GCP). The setup includes:
+## Infrastructure Architecture
 
-- Virtual Private Cloud (VPC) and subnets
-- Firewall rules
-- Compute instances and instance groups
-- Cloud SQL database
-- Pub/Sub topics and subscriptions
-- Storage buckets
-- Cloud Functions
-- SSL Certificates and Load Balancer
+![Architecture Diagram](gcp_Architecture.png)
+
+## Introduction
+
+This guide provides comprehensive steps for setting up infrastructure on Google Cloud Platform using Terraform. The architecture diagram above illustrates the components involved in the setup.
 
 ## Prerequisites
 
-- [Terraform](https://www.terraform.io/downloads) (version 1.x or later)
-- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-- A Google Cloud Platform account and project
+Before proceeding, ensure you have the following:
 
-## Configuration
+- Google Cloud Platform account
+- Google Cloud SDK (gcloud CLI) installed
+- Terraform CLI installed
 
-Before applying the Terraform configurations, set up your variables in a `terraform.tfvars` file. Below is an example structure for `terraform.tfvars`:
+## Configuration Steps
 
-## Clone the Repository
+1. Install and set up the gcloud CLI and Terraform on your local machine.
 
-- git clone https://github.com/yourusername/your-repo.git
-- cd your-repo
+2. Clone the repository using:
+   ```bash
+   git clone git@github.com:Amresh-Cloud/tf-gcp-infra.git
+   ```
 
-## Initialize Terraform
+3. Navigate to the cloned repository:
+   ```bash
+   cd tf-gcp-infra
+   ```
 
-- terraform init
+4. **Review and Update Terraform Configuration**:
+   - Create or modify a Terraform configuration file (e.g., `main.tf`) to define resources like networks and subnets. Avoid hard-coding values, and use variables for a dynamic configuration.
+   - Define variables in a separate file (e.g., `variables.tf`) to store values such as project ID, region, VPC CIDR range, etc. This allows reuse of the Terraform configuration across multiple VPCs.
 
-## Review the Plan
+5. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
 
-- terraform plan
+6. Validate the configuration:
+   ```bash
+   terraform validate
+   ```
 
-## Apply the Configuration
+7. Plan infrastructure changes:
+   ```bash
+   terraform plan
+   ```
 
-- terraform apply
+8. Apply the changes to create VPC and subnets:
+   ```bash
+   terraform apply
+   ```
 
-## Destroy the Infrastructure
+### Checking State
 
-- terraform destroy
-  
-# Resources
- - Terraform Documentation
- - Google Cloud Platform Documentation
- - Terraform Google Cloud Provider Documentation
+Check the state of your infrastructure using:
+```bash
+terraform show
+```
 
+## Continuous Integration (CI) Workflow
+
+The CI workflow for this project is implemented using GitHub Actions:
+
+1. GitHub Actions triggers the workflow upon pull request or push events.
+2. The workflow checks out the repository.
+3. Terraform is installed and initialized.
+4. The `terraform fmt` command formats the configuration.
+5. The `terraform validate` command checks the syntax.
+6. If validation succeeds, the workflow proceeds; otherwise, it fails and notifies the user.
+7. Additional steps such as planning and applying changes can be included if configured.
+
+## Architecture Overview
+
+This project automates the setup of several key components using Terraform on Google Cloud Platform, ensuring consistent and reproducible infrastructure.
+
+### Managed SSL Certificate
+
+Configured to secure web applications with HTTPS.
+
+### Virtual Private Cloud (VPC)
+
+Custom networks and subnetworks are configured to efficiently manage network resources.
+
+### Cloud SQL Database
+
+A Cloud SQL instance is provisioned to store and manage application data.
+
+### Cloud Functions
+
+Serverless functions are triggered by Pub/Sub events, handling tasks like sending emails.
+
+### Pub/Sub Topics
+
+Facilitates asynchronous communication, enabling a decoupled and scalable architecture.
+
+### Continuous Integration (CI)
+
+Ensures infrastructure changes are validated and applied smoothly.
+
+### Cloud VM Instance
+
+Virtual machines host the application and provide computing resources in the cloud.
+
+### Managed Instance Group
+
+Automatically scales and manages identical VM instances, ensuring high availability and load balancing.
+
+### Load Balancer
+
+Distributes incoming traffic across VM instances to improve scalability and availability.
+
+### Cloud DNS
+
+Handles domain name resolution for easy access to the application, providing reliable DNS hosting.
+
+### Instance Template
+
+Defines configuration settings for VM instances, ensuring consistency in provisioning.
+
+### Key Rings
+
+Manages encryption keys for enhanced data security in centralized storage.
+
+### Cloud Logging with Ops Agent
+
+Collects and analyzes logs from GCP services to monitor performance and security.
